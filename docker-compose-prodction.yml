@@ -1,0 +1,39 @@
+version: "3"
+services: 
+  express:
+    # image: node:lts
+    build: ./express
+    environment:
+      - DEBUG=app
+      # nodemonにネットワーク越しに監視させる
+      - CHOKIDAR_USEPOLLING=1
+    tty: true
+    working_dir: /src
+    volumes:
+      - ./express:/src
+    command: npm start
+  flask:
+    build: ./flask
+    volumes: 
+      - ./flask/:/src
+    environment: 
+      - "TZ=Asia/Tokyo"
+      - "FLASK_APP=__init__.py"
+    command: "flask run --host 0.0.0.0 --port 5000"
+  db:
+    image: mysql:5.7.34
+    command: mysqld --character-set-server=utf8mb4
+    environment:
+      MYSQL_ROOT_PASSWORD: "mysqlrootpass"
+      MYSQL_DATABASE: "sample01"
+      MYSQL_USER: apiuser
+      MYSQL_PASSWORD: apipasswd
+    volumes:
+      - ./db/db-data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d
+    restart: always
+  reverse-proxy:
+    image: nginx:latest
+    volumes: 
+      - ./reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
+    ports: 80:80
